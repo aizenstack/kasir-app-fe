@@ -1,6 +1,12 @@
 <script setup>
+import { ref } from 'vue';
 import SidebarLayout from '../components/navigations/SidebarLayout.vue';
+import AppTopBarLayout from '../components/navigations/AppTopBarLayout.vue';
+const isMobileSidebarOpen = ref(false);
 
+const toggleMobileSidebar = () => {
+  isMobileSidebarOpen.value = !isMobileSidebarOpen.value;
+};
 </script>
 
 <template>
@@ -8,11 +14,15 @@ import SidebarLayout from '../components/navigations/SidebarLayout.vue';
     <SidebarLayout class="hidden md:flex" />
 
     <div class="flex-1 flex flex-col h-screen overflow-visible">
+      <div class="sticky top-0 z-50 bg-white shadow">
+                <AppTopBarLayout @toggleSidebar="toggleMobileSidebar" />
+      </div>
+
       <main class="flex-1 overflow-y-auto focus:outline-none bg-white pb-16 md:pb-0">
         <div class="py-2 md:py-4">
           <div class="mx-auto px-1 sm:px-2 md:px-3">
             <div class="ml-8">
-              <!-- Breadcrumb jika ada -->
+              <!-- <ReusableBreadcrumb /> -->
             </div>
             <router-view />
           </div>
@@ -21,4 +31,3 @@ import SidebarLayout from '../components/navigations/SidebarLayout.vue';
     </div>
   </div>
 </template>
-
