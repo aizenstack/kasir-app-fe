@@ -29,7 +29,7 @@ const deleteProduct = async (id) => {
 const getAllData = async () => {
     try {
         isLoading.value = true
-        const response = await http.get('/produk')
+        const response = await http.get('/pelanggan')
         products.value = response.data.data
     } catch (err) {
         console.error(err)
@@ -39,9 +39,9 @@ const getAllData = async () => {
 }
 
 const columns = [
-    { field: 'nama_produk', header: 'Nama Produk' },
-    { field: 'harga', header: 'Harga', type: 'currency' },
-    { field: 'stok', header: 'Stok' }
+    { field: 'nama_pelanggan', header: 'Nama Pelanggan' },
+    { field: 'alamat', header: 'Alamat' },
+    { field: 'telepon', header: 'Telepon' }
 ]
 
 const openEdit = (row) => {
@@ -53,9 +53,9 @@ const openEdit = (row) => {
 const openAdd = () => {
     mode.value = 'add'
     form.value = {
-        nama_produk: '',
-        harga: '',
-        stok: ''
+        nama_pelanggan: '',
+        alamat: '',
+        telepon: ''
     }
     visible.value = true
 }
@@ -87,16 +87,16 @@ const visible = ref(false)
 <template>
     <div class="card">
         <div class="flex justify-between items-center mb-4 ml-8 mr-8">
-            <h2 class="text-xl font-bold">Manajemen Pendataan Barang</h2>
-            <Button severity="info" label="Add New Product" icon="pi pi-plus" @click="openAdd" />
+            <h2 class="text-xl font-bold">Manajemen Pelanggan</h2>
+            <Button severity="info" label="Add New Pelanggan" icon="pi pi-plus" @click="openAdd" />
         </div>
         <div class="mt-2 p-8">
             <data-table-component :data="products" :columns="columns" :loading="isLoading" :rows="5"
                 :rowsPerPageOptions="[5, 10, 20]">
                 <template #action="{ row }">
                     <div class="flex gap-2 justify-center text-start">
-                        <Button icon="pi pi-pencil" size="small" @click="openEdit(row)" v-tooltip.left="'Edit'"/>
-                        <Button icon="pi pi-trash" severity="danger" size="small" @click="deleteProduct(row.id)" v-tooltip.left="'Hapus'"/>
+                        <Button icon="pi pi-pencil" size="small" @click="openEdit(row)" />
+                        <Button icon="pi pi-trash" severity="danger" size="small" @click="deleteProduct(row.id)" />
                     </div>
                 </template>
             </data-table-component>
@@ -105,18 +105,18 @@ const visible = ref(false)
             :style="{ width: '80rem' }" :breakpoints="{ '1199px': '75vw', '575px': '90vw' }">
             <div class="grid gap-3">
                 <div>
-                    <label>Nama Produk</label>
-                    <InputText v-model="form.nama_produk" class="w-full" />
+                    <label>Nama Pelanggan</label>
+                    <InputText v-model="form.nama_pelanggan" class="w-full" />
                 </div>
 
                 <div>
-                    <label>Harga</label>
-                    <InputText v-model="form.harga" class="w-full" />
+                    <label>Alamat</label>
+                    <InputText v-model="form.alamat" class="w-full" />
                 </div>
 
                 <div>
-                    <label>Stok</label>
-                    <InputText v-model="form.stok" class="w-full" />
+                    <label>Telepon</label>
+                    <InputText v-model="form.telepon" class="w-full" />
                 </div>
             </div>
 
