@@ -29,7 +29,7 @@ const deleteProduct = (id) => {
         accept: async () => {
             try {
                 isLoading.value = true
-                await http.delete(`/produk/${id}`)
+                await http.delete(`/pelanggan/${id}`)
                 toast.add({ severity: 'success', summary: 'Berhasil', detail: 'Pelanggan berhasil dihapus', life: 3000 });
                 await getAllData()
             } catch (err) {
@@ -80,9 +80,9 @@ const submit = async () => {
     try {
         isLoading.value = true
         if (mode.value === 'add') {
-            await http.post('/produk', form.value)
+            await http.post('/pelanggan', form.value)
         } else {
-            await http.put(`/produk/${form.value.id}`, form.value)
+            await http.put(`/pelanggan/${form.value.id}`, form.value)
         }
         visible.value = false
         await getAllData()
