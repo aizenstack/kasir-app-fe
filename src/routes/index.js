@@ -1,5 +1,6 @@
-import {createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import AppLayout from '../layouts/AppLayout.vue';
+import { getToken, getRole } from '../utils/auth';
 
 const router = createRouter({
     history: createWebHistory(),
@@ -22,6 +23,7 @@ const router = createRouter({
         {
             path: '/',
             component: AppLayout,
+            meta: { requiresAuth: true },
             children: [
                 {
                     path: '',
@@ -44,9 +46,20 @@ const router = createRouter({
                     component: () => import('../views/StokProduk.vue')
                 },
                 {
+                    path: '/penjualan',
+                    name: 'penjualan',
+                    component: () => import('../views/Penjualan.vue')
+                },
+                {
+                    path: '/pelanggan',
+                    name: 'pelanggan',
+                    component: () => import('../views/Pelanggan.vue')
+                },
+                {
                     path: '/registrasi',
                     name: 'registrasi',
-                    component: () => import('../views/auth/Registrasi.vue')
+                    component: () => import('../views/auth/Registrasi.vue'),
+                    meta: { roles: ['administrator'] }
                 }
             ]
         },
@@ -57,5 +70,20 @@ const router = createRouter({
         }
     ]
 })
+
+router.beforeEach((to, from, next) => {
+    const token = getToken();
+    const role = getRole();
+
+    if (to.meta.requiresAuth && !token) {
+        next('/auth/login');
+    } else if (to.path === '/auth/login' && token) {
+        next('/');
+    } else if (to.meta.roles && !to.meta.roles.includes(role)) {
+        next('/auth/access-denied');
+    } else {
+        next();
+    }
+});
 
 export default router;
