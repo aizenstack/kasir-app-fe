@@ -47,8 +47,20 @@ const getAllData = async () => {
         isLoading.value = true
         const response = await http.get('/produk')
         products.value = response.data.data
+        toast.add({
+            severity: 'info',
+            summary: 'Info',
+            detail: 'Data Berhasil dimuat',
+            life: 3000
+        })
     } catch (err) {
         console.error(err)
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Data Gagal dimuat',
+            life: 3000
+        })
     } finally {
         isLoading.value = false
     }
@@ -85,9 +97,21 @@ const submit = async () => {
             await http.put(`/produk/${form.value.id}`, form.value)
         }
         visible.value = false
+        toast.add({
+            severity: 'success',
+            summary: 'Berhasil',
+            detail: 'Data Berhasil dibuat',
+            life: 3000
+        })
         await getAllData()
     } catch (err) {
         console.error(err)
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Gagal Menambahkan Data',
+            life: 3000
+        })
     } finally {
         isLoading.value = false
     }
