@@ -1,7 +1,11 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import http from '../utils/http'
+import { useConfirm } from "primevue/useconfirm";
+import { useToast } from "primevue/usetoast";
 
+const confirm = useConfirm();
+const toast = useToast();
 const products = ref([])
 
 const isLoading = ref(false)
@@ -13,17 +17,29 @@ const form = ref({
     stok: ''
 })
 
-const deleteProduct = async (id) => {
-    if (!confirm('Are you sure want to delete this product?')) return
-    try {
-        isLoading.value = true
-        await http.delete(`/produk/${id}`)
-        await getAllData()
-    } catch (err) {
-        console.error(err)
-    } finally {
-        isLoading.value = false
-    }
+const deleteProduct = (id) => {
+    confirm.require({
+        message: 'Apakah anda yakin ingin menghapus produk ini?',
+        header: 'Konfirmasi Hapus',
+        icon: 'pi pi-exclamation-triangle',
+        acceptLabel: 'Ya, Hapus',
+        rejectLabel: 'Batal',
+        rejectClass: 'p-button-secondary p-button-outlined',
+        acceptClass: 'p-button-danger',
+        accept: async () => {
+            try {
+                isLoading.value = true
+                await http.delete(`/produk/${id}`)
+                toast.add({ severity: 'success', summary: 'Berhasil', detail: 'Produk berhasil dihapus', life: 3000 });
+                await getAllData()
+            } catch (err) {
+                console.error(err)
+                toast.add({ severity: 'error', summary: 'Error', detail: 'Gagal menghapus produk', life: 3000 });
+            } finally {
+                isLoading.value = false
+            }
+        }
+    });
 }
 
 const getAllData = async () => {
@@ -86,6 +102,8 @@ const visible = ref(false)
 
 <template>
     <div class="card">
+        <Toast />
+        <ConfirmDialog />
         <div class="flex justify-between items-center mb-4 ml-8 mr-8">
             <h2 class="text-xl font-bold">Manajemen Pendataan Barang</h2>
             <Button severity="info" label="Add New Product" icon="pi pi-plus" @click="openAdd" />

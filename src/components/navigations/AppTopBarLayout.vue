@@ -6,7 +6,7 @@ import { clearAuth, getRole, getRefreshToken, getUsername } from '../../utils/au
 import http from '../../utils/http'
 
 const open = ref(false)
-const { sidebarMenu } = useMenu()
+const { sidebar: sidebarMenu } = useMenu()
 const router = useRouter()
 const userRole = ref('')
 const username = ref('')
