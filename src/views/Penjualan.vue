@@ -242,7 +242,7 @@ const downloadtrxPenjualan = async (id) => {
 
                 <div>
                     <h3 class="text-lg font-bold mb-3">Daftar Produk</h3>
-                    <DataTable :value="selectedPenjualan.detail_penjualan" size="small" class="p-datatable-sm">
+                    <DataTable :value="selectedPenjualan.detailPenjualan" size="small" class="p-datatable-sm">
                         <Column field="produk.nama_produk" header="Nama Produk" />
                         <Column field="jumlah_produk" header="Qty" />
                         <Column field="produk.harga" header="Harga Satuan" type="currency">

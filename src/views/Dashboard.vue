@@ -1,189 +1,196 @@
+<script setup>
+import { ref, onMounted, computed } from 'vue';
+import Chart from 'primevue/chart';
+import http from '../utils/http';
+import { useToast } from 'primevue/usetoast';
+
+const toast = useToast();
+const isLoading = ref(false);
+
+const products = ref([]);
+const sales = ref([]);
+
+const totalRevenue = computed(() => sales.value.reduce((acc, sale) => acc + parseFloat(sale.total_harga), 0));
+const totalSalesCount = computed(() => sales.value.length);
+const totalProductCount = computed(() => products.value.length);
+
+const revenueChartData = ref(null);
+const revenueChartOptions = ref(null);
+const topProductsChartData = ref(null);
+const topProductsChartOptions = ref(null);
+
+const formatRupiah = (number) => {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(number);
+};
+
+const initDashboard = async () => {
+    isLoading.value = true;
+    try {
+        const [prodRes, saleRes] = await Promise.all([
+            http.get('/produk'),
+            http.get('/penjualan')
+        ]);
+
+        products.value = prodRes.data.data;
+        sales.value = saleRes.data.data;
+
+        setupRevenueChart();
+        setupTopProductsChart();
+
+    } catch (err) {
+        console.error(err);
+        toast.add({ severity: 'error', summary: 'Error', detail: 'Gagal memuat data', life: 3000 });
+    } finally {
+        isLoading.value = false;
+    }
+};
+
+const setupRevenueChart = () => {
+    // Group sales by date
+    const salesByDate = {};
+    sales.value.forEach(sale => {
+        const date = new Date(sale.tanggal_penjualan).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+        salesByDate[date] = (salesByDate[date] || 0) + parseFloat(sale.total_harga);
+    });
+
+    const labels = Object.keys(salesByDate).slice(-7); // Last 7 days
+    const data = labels.map(date => salesByDate[date]);
+
+    revenueChartData.value = {
+        labels: labels,
+        datasets: [
+            {
+                label: 'Pendapatan Harian',
+                data: data,
+                fill: true,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                tension: 0.4
+            }
+        ]
+    };
+
+    revenueChartOptions.value = {
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: '#f3f4f6' }
+            },
+            x: {
+                grid: { display: false }
+            }
+        }
+    };
+};
+
+const setupTopProductsChart = () => {
+    const sortedProducts = [...products.value].sort((a, b) => b.stok - a.stok).slice(0, 5);
+    
+    topProductsChartData.value = {
+        labels: sortedProducts.map(p => p.nama_produk.length > 20 ? p.nama_produk.substring(0, 20) + '...' : p.nama_produk),
+        datasets: [
+            {
+                label: 'Stok Tersedia',
+                data: sortedProducts.map(p => p.stok),
+                backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+                borderWidth: 0,
+                borderRadius: 4
+            }
+        ]
+    };
+
+    topProductsChartOptions.value = {
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { display: false }
+            },
+            x: {
+                grid: { display: false }
+            }
+        }
+    };
+};
+
+onMounted(() => {
+    initDashboard();
+});
+</script>
+
 <template>
-    <div class="min-h-screen bg-white p-8 flex justify-center font-sans">
-        <div class="bg-white w-full max-w-full rounded-4xl shadow-lg
-             border border-gray-100 overflow-hidden">
+    <div class="p-6 space-y-6 bg-gray-50 min-h-screen">
+        <Toast />
+        
+        <!-- Welcome Banner -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-8 text-white shadow-lg">
+            <h1 class="text-3xl font-bold mb-2">Dashboard Overview</h1>
+            <p class="text-blue-100">Pantau performa bisnis Anda hari ini secara real-time.</p>
+        </div>
 
-            <main class="p-8">
-
-                <!-- ================= TOP ================= -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-
-                    <!-- ====== GRAFIK ====== -->
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <div class="flex justify-between items-start">
                     <div>
-                        <div class="bg-blue-600 text-white px-5 py-2 rounded-t-lg w-fit font-bold text-sm">
-                            📊 Statistik Penjualan
-                        </div>
-
-                        <div class="bg-gray-50 p-8 min-h-[360px] flex flex-col items-center
-                        border border-gray-100 rounded-b-xl rounded-r-xl">
-
-                            <div class="w-[260px] h-[260px]">
-                                <Chart type="doughnut" :data="chartData" :options="chartOptions"
-                                    class="w-full h-full" />
-                            </div>
-
-                            <div class="mt-6 grid grid-cols-2 gap-4 w-full">
-                                <div class="bg-white p-4 rounded-xl shadow-sm border-t-4 border-blue-700">
-                                    <p class="text-[10px] uppercase text-gray-400 font-bold">Pendapatan</p>
-                                    <p class="text-lg font-black text-blue-800">
-                                        {{ rupiah(totalPendapatan) }}
-                                    </p>
-                                </div>
-
-                                <div class="bg-white p-4 rounded-xl shadow-sm border-t-4 border-blue-300">
-                                    <p class="text-[10px] uppercase text-gray-400 font-bold">Pengeluaran</p>
-                                    <p class="text-lg font-black text-blue-400">
-                                        {{ rupiah(totalPengeluaran) }}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+                        <p class="text-gray-500 text-sm font-medium mb-1">Total Pendapatan</p>
+                        <h3 class="text-2xl font-bold text-gray-800">{{ formatRupiah(totalRevenue) }}</h3>
                     </div>
-
-                    <!-- ====== WELCOME ====== -->
-                    <div class="text-center flex flex-col items-center">
-                        <h2 class="text-5xl lg:text-5xl font-extrabold italic uppercase tracking-tight
-                     text-blue-500 mb-2" style="font-bold:'Playfair Display', serif">
-                            Selamat Datang <br />
-                            <span class="text-blue-700">di Aplikasi SIKAS</span>
-                        </h2>
-
-                        <P class="text-gray-500 text-lg md:text-xl max-w-xl mb-10 leading-relaxed">
-                            Sistem Informasi Kasir modern untuk mengelola penjualan,
-                            pendapatan, dan pengeluaran secara otomatis.
-                        </p>
-
-                        <button class="bg-green-500 hover:bg-green-600 text-white
-                     text-2xl font-extrabold px-20 py-4 rounded-2xl
-                     shadow-[0_6px_0_rgb(21,128,61)]
-                     active:translate-y-[6px] active:shadow-none transition-all">
-                            SIKAS
-                        </button>
+                    <div class="p-2 bg-green-50 rounded-lg text-green-600">
+                        <i class="pi pi-wallet text-xl"></i>
                     </div>
                 </div>
+            </div>
 
-                <!-- ================= BOTTOM ================= -->
-                <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 mt-16">
-
-                    <!-- PRODUK -->
-                    <div class="lg:col-span-2">
-                        <h3 class="text-blue-500 font-black text-xs uppercase mb-3">📦 Daftar Produk</h3>
-
-                        <table class="w-full text-xs bg-gray-50 rounded-xl overflow-hidden">
-                            <thead class="bg-blue-500 text-white">
-                                <tr>
-                                    <th class="p-3">No</th>
-                                    <th class="p-3 text-left">Produk</th>
-                                    <th class="p-3">Stok</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="(p, i) in produk" :key="i" class="border-b hover:bg-blue-50">
-                                    <td class="p-2 text-center">{{ i + 1 }}</td>
-                                    <td class="p-2">{{ p.nama }}</td>
-                                    <td class="p-2 text-center font-bold text-blue-600">
-                                        {{ p.stok }}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium mb-1">Total Transaksi</p>
+                        <h3 class="text-2xl font-bold text-gray-800">{{ totalSalesCount }}</h3>
                     </div>
-
-                    <!-- PENJUALAN -->
-                    <div class="lg:col-span-3">
-                        <h3 class="text-blue-500 font-black text-xs uppercase mb-3">🛒 Laporan Penjualan</h3>
-
-                        <table class="w-full text-xs bg-gray-50 rounded-xl overflow-hidden">
-                            <thead class="bg-blue-500 text-white">
-                                <tr>
-                                    <th class="p-3">No</th>
-                                    <th class="p-3">Tanggal</th>
-                                    <th class="p-3">Masuk</th>
-                                    <th class="p-3">Keluar</th>
-                                    <th class="p-3">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="(l, i) in penjualan" :key="i" class="border-b hover:bg-blue-50">
-                                    <td class="p-2 text-center">{{ i + 1 }}</td>
-                                    <td class="p-2 text-center">{{ l.tgl }}</td>
-                                    <td class="p-2 text-green-600 font-semibold">
-                                        {{ rupiah(l.masuk) }}
-                                    </td>
-                                    <td class="p-2 text-red-500">
-                                        {{ rupiah(l.keluar) }}
-                                    </td>
-                                    <td class="p-2 font-black">
-                                        {{ rupiah(l.masuk - l.keluar) }}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
+                        <i class="pi pi-shopping-bag text-xl"></i>
                     </div>
-
                 </div>
-            </main>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium mb-1">Total Produk</p>
+                        <h3 class="text-2xl font-bold text-gray-800">{{ totalProductCount }}</h3>
+                    </div>
+                    <div class="p-2 bg-orange-50 rounded-lg text-orange-600">
+                        <i class="pi pi-box text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Revenue Trend -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="font-bold text-lg text-gray-800 mb-6">Tren Pendapatan (7 Hari Terakhir)</h3>
+                <div class="h-[300px] flex items-center justify-center">
+                    <Chart type="line" :data="revenueChartData" :options="revenueChartOptions" class="w-full h-full" v-if="revenueChartData" />
+                    <div v-else class="text-gray-400">Memuat grafik...</div>
+                </div>
+            </div>
+
+            <!-- Top Products -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="font-bold text-lg text-gray-800 mb-6">Stok Produk Terbanyak</h3>
+                <div class="h-[300px] flex items-center justify-center">
+                    <Chart type="bar" :data="topProductsChartData" :options="topProductsChartOptions" class="w-full h-full" v-if="topProductsChartData" />
+                    <div v-else class="text-gray-400">Memuat grafik...</div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
-
-<script setup>
-import { ref, computed, watch } from 'vue'
-
-/* ===== DATA ===== */
-const produk = ref([
-    { nama: 'Beras', stok: 20 },
-    { nama: 'Gula', stok: 15 },
-    { nama: 'Minyak', stok: 30 }
-])
-
-const penjualan = ref([
-    { tgl: '22 Des 2025', masuk: 90000, keluar: 60000 },
-    { tgl: '23 Des 2025', masuk: 120000, keluar: 50000 },
-    { tgl: '24 Des 2025', masuk: 80000, keluar: 30000 }
-])
-
-/* ===== TOTAL OTOMATIS ===== */
-const totalPendapatan = computed(() =>
-    penjualan.value.reduce((t, d) => t + d.masuk, 0)
-)
-
-const totalPengeluaran = computed(() =>
-    penjualan.value.reduce((t, d) => t + d.keluar, 0)
-)
-
-/* ===== GRAFIK OTOMATIS ===== */
-const chartData = ref({})
-const chartOptions = {
-    cutout: '65%',
-    plugins: {
-        legend: { position: 'bottom' }
-    },
-    responsive: true,
-    maintainAspectRatio: false
-}
-
-watch(
-    [totalPendapatan, totalPengeluaran],
-    () => {
-        chartData.value = {
-            labels: ['Pendapatan', 'Pengeluaran'],
-            datasets: [
-                {
-                    data: [totalPendapatan.value, totalPengeluaran.value],
-                    backgroundColor: ['#1e40af', '#93c5fd'],
-                    borderWidth: 0
-                }
-            ]
-        }
-    },
-    { immediate: true }
-)
-
-/* ===== FORMAT RUPIAH ===== */
-const rupiah = (n) =>
-    new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR'
-    }).format(n)
-</script>
