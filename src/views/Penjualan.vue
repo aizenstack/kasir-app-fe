@@ -185,9 +185,21 @@ const downloadtrxPenjualan = async (id) => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        toast.add({
+            severity: 'success',
+            summary: 'Berhasil',
+            detail: 'Data Berhasil di Download',
+            life: 2000
+        })
     } catch (err) {
         console.error("Download fail:", err)
-        alert("Gagal mengunduh struk")
+        // alert("Gagal mengunduh struk")
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Gagal Mengunduh Struk',
+            life: 3000
+        })
     } finally {
         isLoading.value = false
     }
