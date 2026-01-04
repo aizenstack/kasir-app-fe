@@ -39,6 +39,7 @@ export const menu = [
         icon: 'pi pi-user-plus',
         label: 'Registrasi',
         to: '/registrasi',
-        showInSide: true
+        showInSide: true,
+        roles: ['administrator']
     },
 ]
