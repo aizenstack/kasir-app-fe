@@ -11,16 +11,28 @@ export const menu = [
         to: '/pendataan-barang',
         showInSide: true
     },
-    {
-        icon: 'pi pi-box',
-        label: 'Produk',
-        to: '/produk',
-        showInSide: true
-    },
+    // {
+    //     icon: 'pi pi-box',
+    //     label: 'Produk',
+    //     to: '/produk',
+    //     showInSide: true
+    // },
     {
         icon: 'pi pi-chart-bar',
         label: 'Stok Produk',
         to: '/stok-produk',
+        showInSide: true
+    },
+    {
+        icon: 'pi pi-cart-arrow-down',
+        label: 'Penjualan',
+        to: '/penjualan',
+        showInSide: true
+    },
+    {
+        icon: 'pi pi-users',
+        label: 'Pelanggan',
+        to: '/pelanggan',
         showInSide: true
     },
     {
