@@ -6,18 +6,18 @@ import { useToast } from "primevue/usetoast";
 
 const confirm = useConfirm();
 const toast = useToast();
-const products = ref([])
+const pelanggan = ref([])
 
 const isLoading = ref(false)
 
 const mode = ref('add')
 const form = ref({
-    nama_produk: '',
-    harga: '',
-    stok: ''
+    nama_pelanggan: '',
+    alamat: '',
+    telepon: ''
 })
 
-const deleteProduct = (id) => {
+const deletePelanggan = (id) => {
     confirm.require({
         message: 'Apakah anda yakin ingin menghapus pelanggan ini?',
         header: 'Konfirmasi Hapus',
@@ -46,12 +46,12 @@ const getAllData = async () => {
     try {
         isLoading.value = true
         const response = await http.get('/pelanggan')
-        products.value = response.data.data
+        pelanggan.value = response.data.data
         toast.add({
             severity: 'info',
             summary: 'Info',
             detail: 'Data berhasil dimuat',
-            life: 3000
+            life: 2000
         })
     } catch (err) {
         console.error(err)
@@ -59,7 +59,7 @@ const getAllData = async () => {
             severity: 'error',
             summary: 'Error',
             detail: 'Gagal memuat data',
-            life: 3000
+            life: 2000
         })
     } finally {
         isLoading.value = false
@@ -133,17 +133,17 @@ const visible = ref(false)
             <Button severity="info" label="Add New Pelanggan" icon="pi pi-plus" @click="openAdd" />
         </div>
         <div class="mt-2 p-8">
-            <data-table-component :data="products" :columns="columns" :loading="isLoading" :rows="5"
+            <data-table-component :data="pelanggan" :columns="columns" :loading="isLoading" :rows="5"
                 :rowsPerPageOptions="[5, 10, 20]">
                 <template #action="{ row }">
                     <div class="flex gap-2 justify-center text-start">
                         <Button icon="pi pi-pencil" size="small" @click="openEdit(row)" />
-                        <Button icon="pi pi-trash" severity="danger" size="small" @click="deleteProduct(row.id)" />
+                        <Button icon="pi pi-trash" severity="danger" size="small" @click="deletePelanggan(row.id)" />
                     </div>
                 </template>
             </data-table-component>
         </div>
-        <Dialog v-model:visible="visible" maximizable modal :header="mode === 'add' ? 'Tambah Produk' : 'Edit Produk'"
+        <Dialog v-model:visible="visible" maximizable modal :header="mode === 'add' ? 'Tambah Pelanggan' : 'Edit Produk'"
             :style="{ width: '80rem' }" :breakpoints="{ '1199px': '75vw', '575px': '90vw' }">
             <div class="grid gap-3">
                 <div>
