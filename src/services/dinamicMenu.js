@@ -17,12 +17,12 @@ export const menu = [
     //     to: '/produk',
     //     showInSide: true
     // },
-    {
-        icon: 'pi pi-chart-bar',
-        label: 'Stok Produk',
-        to: '/stok-produk',
-        showInSide: true
-    },
+    // {
+    //     icon: 'pi pi-chart-bar',
+    //     label: 'Stok Produk',
+    //     to: '/stok-produk',
+    //     showInSide: true
+    // },
     {
         icon: 'pi pi-cart-arrow-down',
         label: 'Penjualan',
