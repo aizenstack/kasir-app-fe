@@ -29,17 +29,30 @@ const openAddPenjualan = () => {
 
 const addItem = () => {
     if (!selectedProduct.value) return
-    const existing = form.value.detail.find(item => item.produk_id === selectedProduct.value.id)
-    if (existing) {
-        existing.qty += qty.value
+
+    const existingIndex = form.value.detail.findIndex(item => item.produk_id === selectedProduct.value.id)
+    const currentQtyInCart = existingIndex !== -1 ? form.value.detail[existingIndex].qty : 0
+    const availableStock = selectedProduct.value.stok
+
+    if (currentQtyInCart + qty.value > availableStock) {
+        toast.add({ severity: 'error', summary: 'Stok Tidak Cukup', detail: `Maksimal stok tersedia: ${availableStock}. Sudah di keranjang: ${currentQtyInCart}`, life: 3000 });
+        return
+    }
+
+    if (existingIndex !== -1) {
+        form.value.detail[existingIndex].qty += qty.value
     } else {
         form.value.detail.push({
             produk_id: selectedProduct.value.id,
             nama_produk: selectedProduct.value.nama_produk,
             harga: selectedProduct.value.harga,
-            qty: qty.value
+            qty: qty.value,
+            stok: availableStock // Keep track of stock for validation if needed later
         })
     }
+    
+    // Reset selection nicely but keep visible for rapid entry if needed, 
+    // or just reset qty. Requirement says "selectedProduct.value = null" originally.
     selectedProduct.value = null
     qty.value = 1
 }
@@ -94,7 +107,7 @@ const getAllPenjualan = async () => {
         penjualans.value = response.data.data.map(item => {
             return {
                 ...item,
-                nama_pelanggan: item.pelanggan ? item.pelanggan.nama_pelanggan : '-',
+                nama_pelanggan: item.pelanggan ? `${item.pelanggan.nama_pelanggan} - ${item.pelanggan.alamat || '-'} - ${item.pelanggan.telepon || '-'}` : '-',
                 tanggal_penjualan: new Date(item.tanggal_penjualan).toLocaleDateString('id-ID', {
                     day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
                 })
@@ -124,14 +137,22 @@ const products = ref([])
 const getAllPelanggan = async () => {
     try {
         const response = await http.get('/pelanggan')
-        customers.value = response.data.data
+        customers.value = response.data.data.map(c => ({
+            ...c,
+            fullLabel: `${c.nama_pelanggan} - ${c.alamat || '-'} - ${c.telepon || '-'}`
+        }))
+
     } catch { }
 }
 
 const getAllProduk = async () => {
     try {
         const response = await http.get('/produk')
-        products.value = response.data.data
+        products.value = response.data.data.map(product => ({
+            ...product,
+            stok: Number(product.stok),
+            harga: Number(product.harga)
+        }))
     } catch { }
 }
 
@@ -155,8 +176,10 @@ const deletePenjualan = (id) => {
                 await http.delete(`/penjualan/${id}`)
                 toast.add({ severity: 'success', summary: 'Success', detail: 'Data Deleted', life: 3000 });
                 await getAllPenjualan()
-            } catch {
-                toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to delete data', life: 3000 });
+            } catch (err) {
+                console.error('Delete error:', err);
+                const msg = err.response?.data?.message || err.message || 'Failed to delete data';
+                toast.add({ severity: 'error', summary: 'Error', detail: msg, life: 3000 });
             } finally {
                 isLoading.value = false
             }
@@ -211,7 +234,7 @@ const downloadtrxPenjualan = async (id) => {
         <Toast />
         <ConfirmDialog />
         <div class="flex justify-between items-center mb-4 ml-8 mr-8">
-            <h2 class="text-xl font-bold">Manajemen Pelanggan</h2>
+            <h2 class="text-xl font-bold">Manajemen Penjualan</h2>
             <Button icon="pi pi-plus" label="Tambah Penjualan" severity="info" size="small" @click="openAddPenjualan" />
         </div>
         <div class="mt-0 p-8">
@@ -236,19 +259,9 @@ const downloadtrxPenjualan = async (id) => {
             <div v-if="mode === 'detail' && selectedPenjualan" class="grid gap-6">
                 <div class="bg-gray-50 p-4 rounded-lg">
                     <h3 class="text-lg font-bold mb-3 border-b pb-2">Data Pelanggan</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm text-gray-500">Nama Pelanggan</label>
-                            <span class="font-semibold">{{ selectedPenjualan.pelanggan?.nama_pelanggan || '-' }}</span>
-                        </div>
-                        <div>
-                            <label class="block text-sm text-gray-500">Telepon</label>
-                            <span class="font-semibold">{{ selectedPenjualan.pelanggan?.telepon || '-' }}</span>
-                        </div>
-                        <div class="col-span-2">
-                            <label class="block text-sm text-gray-500">Alamat</label>
-                            <span class="font-semibold">{{ selectedPenjualan.pelanggan?.alamat || '-' }}</span>
-                        </div>
+                    <div class="w-full">
+                        <label class="block text-sm text-gray-500">Nama Pelanggan</label>
+                        <span class="font-semibold">{{ selectedPenjualan.nama_pelanggan  || '-' }}</span>
                     </div>
                 </div>
 
@@ -279,7 +292,7 @@ const downloadtrxPenjualan = async (id) => {
                 <div class="grid grid-cols-12 gap-4">
                     <div class="col-span-4">
                         <label class="block mb-2 font-semibold">Pilih Pelanggan</label>
-                        <Dropdown v-model="form.pelanggan_id" :options="customers" optionLabel="nama_pelanggan"
+                        <Dropdown v-model="form.pelanggan_id" :options="customers" optionLabel="fullLabel"
                             optionValue="id" placeholder="Pilih Pelanggan" class="w-full" filter />
                     </div>
                     <div class="col-span-8 grid grid-cols-12 gap-2 items-end">
